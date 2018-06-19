@@ -20,10 +20,11 @@ int main() {
     /* Problem parameters */
     double c = 1.0;  // Propagation speed of the wave.
     double L = 1.0;  // Length of the domain.
-    int N = 10;     // Number of grid points.
+    int N = 100;     // Number of grid points.
 
     double dx = L/N;
     double dt = 0.01;
+    double t_end = 1.0;
 
     double alpha = c*c * dt*dt / (2*dx*dx);
 
@@ -56,23 +57,28 @@ int main() {
     outfile << u_nm1.format(CommaInitFmt) << '\n';
 
     // Take the first time step.
+    u_n(0)   = 0
+    u_n(N-1) = 0;
+
     for (int i = 1; i < N-1; i++)
         u_n(i) = u_nm1(i) + (c*c/2) * (u_nm1(i+1) - 2*u_nm1(i) + u_nm1(i-1));
 
     outfile << u_n.format(CommaInitFmt) << '\n';
 
-    cout << "u_n-1 = " << u_nm1 << endl;
-    cout << "u_n = " << u_n << endl;
+    while (t < t_end) {
+        // Set up right-hand side vector b.
+        for (i = 1; i < N-1; i++)
+            b(i) = 2*(1-alpha)*u_n(i) - u_nm1(i) + alpha*(u_n(i+1) + u_n(i-1));
 
-    // for (i = 1; i < N-1; i++) {
-    //     b(i) = 2*(1-alpha)*u_n(i) - u_nm1(i) + alpha*(u_n(i+1) + u_n(i-1))
-    //            - dt*dt*f_n(i);
-    // }
+        u_nm1 = u_n;
+        
+        VectorXf u_n = A.colPivHouseholderQr().solve(b);
+        
+        u_n(0)   = 0
+        u_n(N-1) = 0;
 
-    // A << 1,2,3,  4,5,6,  7,8,10;
-    // b << 3, 3, 4;
-    
-    // Vector3f x = A.colPivHouseholderQr().solve(b);
+        outfile << u_n.format(CommaInitFmt) << '\n';
+    }
     
     outfile.close();
 }
