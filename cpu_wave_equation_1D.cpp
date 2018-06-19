@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <Eigen/Dense>
 
 using namespace std;
@@ -12,6 +13,10 @@ double normal_pdf(double x, double m, double s) {
 }
 
 int main() {
+    IOFormat CommaInitFmt(StreamPrecision, DontAlignCols, ", ", ", ", "", "", "", "");
+
+    ofstream outfile("wave_evolution.dat");  // Storing time-dependent solution.
+
     /* Problem parameters */
     double c = 1.0;  // Propagation speed of the wave.
     double L = 1.0;  // Length of the domain.
@@ -27,30 +32,34 @@ int main() {
      */
     MatrixXf A(N,N);
     VectorXf b(N);
-    vectorXf u_n(N);
-    vectorXf u_nm1(N);
+    VectorXf u_n(N);
+    VectorXf u_nm1(N);
 
     // Initialize matrix of coefficients.
     A(0,0) = 1 + 2*alpha;
     A(1,1) = 1 + 2*alpha;
-    A(0,1)   = -alpha;
-    A(N,N-1) = -alpha
+    A(0,1)     = -alpha;
+    A(N-1,N-2) = -alpha;
 
-    for (i = 1; i < N-1; i++) {
+    for (int i = 1; i < N-1; i++) {
         A(i,i) = 1 + 2*alpha;
         A(i,i+1) = -alpha;
         A(i,i-1) = -alpha;
     }
 
     // Set initial conditions.
-    u_nm1(0) = 0;
-    u_nm1(N) = 0;
-    for (i = 1; i < N-1; i++)
-        u_nm1(i) = normal_pdf(i*dx, 0.5, 0.1)
+    u_nm1(0)   = 0;
+    u_nm1(N-1) = 0;
+    for (int i = 1; i < N-1; i++)
+        u_nm1(i) = normal_pdf(i*dx, 0.5, 0.1);
+
+    outfile << u_nm1.format(CommaInitFmt) << '\n';
 
     // Take the first time step.
-    for (i = 1; i < N-1; i++)
+    for (int i = 1; i < N-1; i++)
         u_n(i) = u_nm1(i) + (c*c/2) * (u_nm1(i+1) - 2*u_nm1(i) + u_nm1(i-1));
+
+    outfile << u_n.format(CommaInitFmt) << '\n';
 
     cout << "u_n-1 = " << u_nm1 << endl;
     cout << "u_n = " << u_n << endl;
@@ -64,4 +73,6 @@ int main() {
     // b << 3, 3, 4;
     
     // Vector3f x = A.colPivHouseholderQr().solve(b);
+    
+    outfile.close();
 }
