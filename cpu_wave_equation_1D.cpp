@@ -37,8 +37,8 @@ int main() {
     VectorXf u_nm1(N);
 
     // Initialize matrix of coefficients.
-    A(0,0) = 1 + 2*alpha;
-    A(1,1) = 1 + 2*alpha;
+    A(0,0)     = 1 + 2*alpha;
+    A(N-1,N-1) = 1 + 2*alpha;
     A(0,1)     = -alpha;
     A(N-1,N-2) = -alpha;
 
@@ -47,6 +47,8 @@ int main() {
         A(i,i+1) = -alpha;
         A(i,i-1) = -alpha;
     }
+
+    cout << A << endl;
 
     // Set initial conditions.
     u_nm1(0)   = 0;
@@ -57,7 +59,7 @@ int main() {
     outfile << u_nm1.format(CommaInitFmt) << '\n';
 
     // Take the first time step.
-    u_n(0)   = 0
+    u_n(0)   = 0;
     u_n(N-1) = 0;
 
     for (int i = 1; i < N-1; i++)
@@ -65,19 +67,25 @@ int main() {
 
     outfile << u_n.format(CommaInitFmt) << '\n';
 
+    double t = 0.0;
     while (t < t_end) {
         // Set up right-hand side vector b.
-        for (i = 1; i < N-1; i++)
+        b(0)   = 2*(1-alpha)*u_n(0) - u_nm1(0) + alpha*u_n(1);
+        b(N-1) = 2*(1-alpha)*u_n(N-1) - u_nm1(N-1) + alpha*u_n(N-1);
+        for (int i = 1; i < N-1; i++)
             b(i) = 2*(1-alpha)*u_n(i) - u_nm1(i) + alpha*(u_n(i+1) + u_n(i-1));
 
         u_nm1 = u_n;
         
-        VectorXf u_n = A.colPivHouseholderQr().solve(b);
+        VectorXf u_np1 = A.colPivHouseholderQr().solve(b);
         
-        u_n(0)   = 0
-        u_n(N-1) = 0;
+        u_np1(0)   = 0;
+        u_np1(N-1) = 0;
 
-        outfile << u_n.format(CommaInitFmt) << '\n';
+        outfile << u_np1.format(CommaInitFmt) << '\n';
+        
+        t += dt;
+        u_n = u_np1;
     }
     
     outfile.close();
